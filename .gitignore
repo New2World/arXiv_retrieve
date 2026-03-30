@@ -1,0 +1,49 @@
+# =========================
+# Project Specific Secrets
+# =========================
+# Exclude actual environment variables (keep .env.example intact)
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# Exclude all database footprints and generated summaries in data directory
+backend/data/
+data/
+
+# Exclude prompt optimization feedback/agent logs if necessary
+# agents/FEEDBACK.md
+
+# =========================
+# Python / FastAPI
+# =========================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+backend/.venv/
+venv/
+env/
+
+# =========================
+# Node / React Frontend
+# =========================
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Production build artifacts
+frontend/dist/
+dist/
+.agents/
+
+# =========================
+# OS / IDE
+# =========================
+.DS_Store
+.vscode/
+.idea/
+*.log

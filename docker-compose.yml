@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    container_name: arxiv-agent-backend
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data          # persist DB + summaries
+      - ./.env:/app/.env:ro       # inject config
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/arxiv_agent.db
+      - SUMMARIES_DIR=./data/summaries
+    ports:
+      - "8000:8000"               # optional: direct backend access
+
+  frontend:
+    build: ./frontend
+    container_name: arxiv-agent-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  data:
