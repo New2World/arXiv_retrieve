@@ -1,12 +1,19 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import Optional
-import os
 import json
+import os
+from pathlib import Path
+
 from dotenv import load_dotenv
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
 from app.models.schemas import ProviderConfig
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parents[1]
+ENV_FILE = BASE_DIR / ".env"
+APP_CONFIG_FILE = BASE_DIR / "config.json"
+DATA_DIR = BASE_DIR / "data"
+
+load_dotenv(ENV_FILE)
 
 def get_default_providers() -> dict[str, ProviderConfig]:
     return {
@@ -26,10 +33,10 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./data/arxiv_agent.db"
 
     # ArXiv
-    arxiv_categories: list[str] = ["cs.AI", "cs.LG", "cs.CV"]
-    arxiv_max_results: int = 200  # fetch pool before filtering
-    arxiv_days: int = 7
-    papers_per_day: int = 10
+    arxiv_categories: list[str] = Field(default_factory=lambda: ["cs.AI", "cs.LG", "cs.CV"])
+    arxiv_max_results: int = Field(default=200, le=3000)  # fetch pool before filtering
+    arxiv_days: int = Field(default=7, le=7)
+    papers_per_day: int = Field(default=10, le=200)
 
     # LLM
     llm_provider: str = "openai"  # openai|anthropic|gemini|glm|kimi|qwen|ollama
@@ -39,17 +46,23 @@ class Settings(BaseSettings):
     providers: dict[str, ProviderConfig] = Field(default_factory=get_default_providers)
 
     # Keywords filter
-    keywords: list[str] = []
+    keywords: list[str] = Field(default_factory=list)
 
-    # Storage
-    summaries_dir: str = "./data/summaries"
+    cors_allowed_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ]
+    )
 
     # Schedule (cron-style, default 8am every day)
     auto_fetch_cron: str = "0 8 * * *"
     auto_fetch_enabled: bool = False
 
     model_config = {
-        "env_file": ".env", 
+        "env_file": str(ENV_FILE),
         "env_file_encoding": "utf-8",
         "extra": "ignore"
     }
@@ -57,27 +70,22 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Ensure data directories exist
-os.makedirs(settings.summaries_dir, exist_ok=True)
-os.makedirs("./data", exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
 
-APP_CONFIG_FILE = "./config.json"
-
-if os.path.exists(APP_CONFIG_FILE):
+if APP_CONFIG_FILE.exists():
     try:
-        with open(APP_CONFIG_FILE, "r", encoding="utf-8") as f:
+        with APP_CONFIG_FILE.open("r", encoding="utf-8") as f:
             app_data = json.load(f)
             for k, v in app_data.items():
                 if hasattr(settings, k) and v is not None:
                     if k == "providers":
                         new_provs = {}
                         for pk, pv in v.items():
-                            # Load dynamic secrets natively from .env mapping
                             env_key = f"{pk.upper()}_API_KEY"
                             env_val = os.getenv(env_key)
                             if env_val:
                                 pv["api_key"] = env_val
-                            
+
                             new_provs[pk] = ProviderConfig(**pv)
                         setattr(settings, k, new_provs)
                     else:

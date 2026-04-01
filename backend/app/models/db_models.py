@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional
 from sqlalchemy import (
     String, Text, Float, Integer, Boolean, DateTime, Date, JSON
@@ -27,19 +27,22 @@ class Paper(Base):
 
     # User interaction
     user_rating: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 1-5
+    summary_clicks: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    source_clicks: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_clicked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Selection
     fetch_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     is_selected: Mapped[bool] = mapped_column(Boolean, default=False)
     is_disliked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class FetchLog(Base):
     __tablename__ = "fetch_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String, default="running")  # running|done|error
     fetched_count: Mapped[int] = mapped_column(Integer, default=0)

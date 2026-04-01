@@ -3,19 +3,19 @@
     "arxiv_categories": [
         "cs.AI",
         "cs.LG",
-        "cs.CV"
+        "cs.CV",
+        "cs.RO"
     ],
-    "arxiv_max_results": 100,
+    "arxiv_max_results": 1000,
     "arxiv_days": 7,
-    "papers_per_day": 10,
+    "papers_per_day": 50,
     "llm_provider": "gemini",
     "llm_max_tokens": 2000,
     "llm_concurrency": 1,
-    "llm_wait_seconds": 50,
+    "llm_wait_seconds": 60,
     "providers": {
         "openai": {
             "model": "gpt-5.4-mini",
-            "api_key": "ENV_MAPPED",
             "base_url": "https://api.openai.com/v1",
             "available_models": [
                 "gpt-5.4",
@@ -25,7 +25,6 @@
         },
         "anthropic": {
             "model": "claude-4.6-sonnet",
-            "api_key": "ENV_MAPPED",
             "base_url": "none",
             "available_models": [
                 "claude-4.6-sonnet",
@@ -34,7 +33,6 @@
         },
         "gemini": {
             "model": "gemma-3-27b-it",
-            "api_key": "ENV_MAPPED",
             "base_url": "none",
             "available_models": [
                 "gemini-3.1-flash-lite",
@@ -45,7 +43,6 @@
         },
         "glm": {
             "model": "glm-5.1",
-            "api_key": "ENV_MAPPED",
             "base_url": "https://open.bigmodel.cn/api/paas/v4",
             "available_models": [
                 "glm-5.1",
@@ -55,7 +52,6 @@
         },
         "kimi": {
             "model": "moonshot-k2.5",
-            "api_key": "ENV_MAPPED",
             "base_url": "https://api.moonshot.cn/v1",
             "available_models": [
                 "moonshot-k2.5",
@@ -64,7 +60,6 @@
         },
         "qwen": {
             "model": "qwen3.5-plus",
-            "api_key": "ENV_MAPPED",
             "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
             "available_models": [
                 "qwen3.5-plus",
@@ -74,7 +69,6 @@
         },
         "ollama": {
             "model": "llama3",
-            "api_key": "ENV_MAPPED",
             "base_url": "http://localhost:11434/v1",
             "available_models": [
                 "llama3",
@@ -84,8 +78,18 @@
             ]
         }
     },
-    "keywords": [],
-    "summaries_dir": "./data/summaries",
-    "auto_fetch_cron": "30 7 * * 1",
+    "keywords": [
+        "vla",
+        "vlm",
+        "world model",
+        "embodied"
+    ],
+    "cors_allowed_origins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    "auto_fetch_cron": "15 7 * * 1",
     "auto_fetch_enabled": true
 }

@@ -37,7 +37,6 @@ async def run_fetch(db: AsyncSession, cfg=None) -> FetchLog:
       3. 偏好评分 + Top-N 选取
       4. LLM 总结（跳过已总结的）
       5. 写入数据库
-      6. 生成 markdown 文件
     """
     global _fetch_running
     if _fetch_running:
@@ -46,7 +45,7 @@ async def run_fetch(db: AsyncSession, cfg=None) -> FetchLog:
     _fetch_running = True
     s = cfg or _default_settings
 
-    log = FetchLog(started_at=datetime.utcnow(), status="running")
+    log = FetchLog(started_at=datetime.now(timezone.utc), status="running")
     db.add(log)
     await db.commit()
     await db.refresh(log)
@@ -130,13 +129,13 @@ async def run_fetch(db: AsyncSession, cfg=None) -> FetchLog:
 
         log.status = "done"
         log.selected_count = len(selected)
-        log.finished_at = datetime.utcnow()
+        log.finished_at = datetime.now(timezone.utc)
 
     except Exception as e:
         logger.exception("Fetch failed")
         log.status = "error"
         log.error = str(e)
-        log.finished_at = datetime.utcnow()
+        log.finished_at = datetime.now(timezone.utc)
 
     finally:
         _fetch_running = False

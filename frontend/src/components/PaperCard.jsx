@@ -2,7 +2,7 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import StarRating from './StarRating'
-import { ratePaper, toggleDislike } from '../api/client'
+import { ratePaper, toggleDislike, trackPaperClick } from '../api/client'
 import { toast } from './Toast'
 
 export default function PaperCard({ paper, onRated }) {
@@ -10,6 +10,30 @@ export default function PaperCard({ paper, onRated }) {
   const [rating, setRating] = useState(paper.user_rating || 0)
   const [disliked, setDisliked] = useState(paper.is_disliked || false)
   const [loading, setLoading] = useState(false)
+  const [summaryClicks, setSummaryClicks] = useState(paper.summary_clicks || 0)
+  const [sourceClicks, setSourceClicks] = useState(paper.source_clicks || 0)
+
+  const handleSummaryToggle = async () => {
+    const nextExpanded = !expanded
+    setExpanded(nextExpanded)
+
+    if (nextExpanded) {
+      try {
+        await trackPaperClick(paper.id, 'summary')
+        setSummaryClicks(count => count + 1)
+      } catch {
+        // Click tracking should not block reading.
+      }
+    }
+  }
+
+  const handleSourceClick = () => {
+    trackPaperClick(paper.id, 'source')
+      .then(() => setSourceClicks(count => count + 1))
+      .catch(() => {
+        // Click tracking should not block navigation.
+      })
+  }
 
   const handleRate = async (val) => {
     if (loading) return
@@ -18,7 +42,7 @@ export default function PaperCard({ paper, onRated }) {
       await ratePaper(paper.id, val)
       setRating(val)
       onRated?.()
-      toast.success(`已评分 ${val} ⭐`)
+      toast.success(val > 0 ? `已评分 ${val} ⭐` : '已清除评分')
     } catch {
       toast.error('评分失败，请重试')
     } finally {
@@ -51,7 +75,7 @@ export default function PaperCard({ paper, onRated }) {
     <div className="card paper-card" style={disliked ? { opacity: 0.55, filter: 'grayscale(1)' } : {}}>
       <div className="paper-card-header">
         <h3 className="paper-title">
-          <a href={paper.url} target="_blank" rel="noreferrer">{paper.title}</a>
+          <a href={paper.url} target="_blank" rel="noreferrer" onClick={handleSourceClick}>{paper.title}</a>
         </h3>
         {paper.ai_score != null && (
           <span className={`badge ${scoreColor}`} title="偏好相关度">
@@ -90,10 +114,10 @@ export default function PaperCard({ paper, onRated }) {
       <div className="paper-footer">
         <div className="paper-actions">
           <button className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '5px 10px' }}
-            onClick={() => setExpanded(e => !e)}>
+            onClick={handleSummaryToggle}>
             {expanded ? '▲ 收起' : '▼ 展开总结'}
           </button>
-          <a href={paper.pdf_url || paper.url} target="_blank" rel="noreferrer"
+          <a href={paper.pdf_url || paper.url} target="_blank" rel="noreferrer" onClick={handleSourceClick}
             className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '5px 10px' }}>
             📄 PDF
           </a>
@@ -101,9 +125,9 @@ export default function PaperCard({ paper, onRated }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>评分:</span>
           <StarRating value={rating} onChange={handleRate} />
-          
-          <button 
-            className={`btn ${disliked ? 'btn-primary' : 'btn-ghost'}`} 
+
+          <button
+            className={`btn ${disliked ? 'btn-primary' : 'btn-ghost'}`}
             style={{ fontSize: '0.75rem', padding: '4px 8px', marginLeft: 8 }}
             onClick={handleDislike}
             title="不感兴趣，在下一轮新抓取前彻底抹除此文章并不计入历史。"

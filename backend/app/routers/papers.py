@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.db_models import Paper
-from app.models.schemas import PaperOut, RateRequest, DislikeRequest
+from app.models.schemas import PaperOut, RateRequest, DislikeRequest, PaperClickRequest
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 
@@ -53,7 +53,7 @@ async def rate_paper(
     paper = await db.get(Paper, paper_id)
     if not paper:
         raise HTTPException(status_code=404, detail="Paper not found")
-    paper.user_rating = body.rating
+    paper.user_rating = body.rating or None
     await db.commit()
     await db.refresh(paper)
     return paper
@@ -69,6 +69,27 @@ async def toggle_dislike(
     if not paper:
         raise HTTPException(status_code=404, detail="Paper not found")
     paper.is_disliked = body.is_disliked
+    await db.commit()
+    await db.refresh(paper)
+    return paper
+
+
+@router.post("/{paper_id}/click", response_model=PaperOut)
+async def track_paper_click(
+    paper_id: str,
+    body: PaperClickRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    paper = await db.get(Paper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found")
+
+    if body.target == "summary":
+        paper.summary_clicks = (paper.summary_clicks or 0) + 1
+    else:
+        paper.source_clicks = (paper.source_clicks or 0) + 1
+    paper.last_clicked_at = datetime.now(timezone.utc)
+
     await db.commit()
     await db.refresh(paper)
     return paper

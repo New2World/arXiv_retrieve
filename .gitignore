@@ -1,7 +1,7 @@
 # =========================
 # Project Specific Secrets
 # =========================
-# Exclude actual environment variables (keep .env.example intact)
+# Exclude actual environment variables (keep backend/.env.example intact)
 .env
 backend/.env
 frontend/.env

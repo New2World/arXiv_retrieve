@@ -7,10 +7,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data          # persist DB + summaries
-      - ./.env:/app/.env:ro       # inject config
+      - ./backend/.env:/app/.env:ro
     environment:
       - DATABASE_URL=sqlite+aiosqlite:///./data/arxiv_agent.db
-      - SUMMARIES_DIR=./data/summaries
     ports:
       - "8000:8000"               # optional: direct backend access
 

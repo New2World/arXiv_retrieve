@@ -4,6 +4,12 @@ import { getPapers, triggerFetch, getFetchStatus } from '../api/client'
 import PaperCard from '../components/PaperCard'
 import { toast } from '../components/Toast'
 
+function parseUtcTimestamp(value) {
+  if (!value) return null
+  const hasTimezone = /[zZ]|[+-]\d{2}:\d{2}$/.test(value)
+  return new Date(hasTimezone ? value : `${value}Z`)
+}
+
 export default function Home() {
   const [papers, setPapers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -63,6 +69,7 @@ export default function Home() {
   )
 
   const today = new Date().toISOString().slice(0, 10)
+  const lastFetchDate = parseUtcTimestamp(fetchStatus?.last_log?.started_at)
 
   return (
     <div>
@@ -89,7 +96,7 @@ export default function Home() {
         {fetchStatus?.last_log && !fetchStatus.running && (
           <div className="fetch-banner" style={{ background: 'transparent', border: '1px solid var(--border-subtle)', marginBottom: 16 }}>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              上次抓取：{new Date(fetchStatus.last_log.started_at).toLocaleString('zh-CN')}
+              上次抓取：{lastFetchDate ? lastFetchDate.toLocaleString('zh-CN') : 'N/A'}
               &nbsp;·&nbsp;
               共抓取 {fetchStatus.last_log.fetched_count} 篇，筛选 {fetchStatus.last_log.selected_count} 篇
               &nbsp;·&nbsp;

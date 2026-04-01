@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+
+import { getHealth } from '../api/client'
 
 const NAV_ITEMS = [
   { to: '/', icon: '🏠', label: '今日论文' },
@@ -6,7 +9,27 @@ const NAV_ITEMS = [
   { to: '/settings', icon: '⚙️', label: '系统配置' },
 ]
 
+const FALLBACK_VERSION = '0.0.1'
+
 export default function Sidebar() {
+  const [version, setVersion] = useState(FALLBACK_VERSION)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getHealth()
+      .then(data => {
+        if (!cancelled && data?.version) {
+          setVersion(data.version)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -27,7 +50,7 @@ export default function Sidebar() {
         ))}
       </nav>
       <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-        ArXiv Agent v0.0.1 by <a href="https://github.com/New2World">New2World</a>
+        ArXiv Agent v{version} by <a href="https://github.com/New2World">New2World</a>
       </div>
     </aside>
   )

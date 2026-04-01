@@ -22,14 +22,14 @@ def keyword_filter(papers: list["RawPaper"], keywords: list[str]) -> list["RawPa
     if not keywords:
         return papers
 
-    kw_lower = [k.lower() for k in keywords if k.strip()]
-    if not kw_lower:
+    normalized_keywords = [k.strip().casefold() for k in keywords if k.strip()]
+    if not normalized_keywords:
         return papers
 
     result = []
     for p in papers:
-        text = (p.title + " " + p.abstract).lower()
-        if any(kw in text for kw in kw_lower):
+        text = (p.title + " " + p.abstract).casefold()
+        if any(kw in text for kw in normalized_keywords):
             result.append(p)
     return result
 

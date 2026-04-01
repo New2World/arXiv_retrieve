@@ -29,8 +29,6 @@ function TagsInput({ value, onChange, placeholder }) {
   )
 }
 
-const PROVIDERS = ['openai', 'anthropic', 'gemini', 'glm', 'kimi', 'qwen', 'ollama']
-
 export default function Settings() {
   const [cfg, setCfg] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -49,6 +47,21 @@ export default function Settings() {
         [c.llm_provider]: {
           ...c.providers[c.llm_provider],
           [key]: val
+        }
+      }
+    }))
+  }
+
+  const clearProviderApiKey = () => {
+    setCfg(c => ({
+      ...c,
+      providers: {
+        ...c.providers,
+        [c.llm_provider]: {
+          ...c.providers[c.llm_provider],
+          api_key: '',
+          clear_api_key: true,
+          has_api_key: false
         }
       }
     }))
@@ -136,6 +149,7 @@ export default function Settings() {
   )
 
   const currentProvider = cfg.providers[cfg.llm_provider] || {}
+  const providerNames = Object.keys(cfg.providers || {})
 
   return (
     <div>
@@ -153,27 +167,27 @@ export default function Settings() {
             <div className="form-group">
               <label className="form-label">当前大语言模型驱动 (Provider)</label>
               <select value={cfg.llm_provider} onChange={e => set('llm_provider', e.target.value)}>
-                {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
+                {providerNames.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
 
             <div className="form-group">
               <label className="form-label">总结字数流限制 (全局最大 Token)</label>
-              <input type="number" value={cfg.llm_max_tokens} min={200} max={4000}
+              <input type="number" value={cfg.llm_max_tokens}
                 onChange={e => set('llm_max_tokens', +e.target.value)} />
               <p className="form-hint">所有大模型统一的生成阈控制区。</p>
             </div>
 
             <div className="form-group">
               <label className="form-label">并发请求数 (最大同时处理论文)</label>
-              <input type="number" value={cfg.llm_concurrency} min={1} max={10}
+              <input type="number" value={cfg.llm_concurrency}
                 onChange={e => set('llm_concurrency', +e.target.value)} />
               <p className="form-hint">设为 1 即完全排队串行处理（有效防止大模型拥堵）。</p>
             </div>
 
             <div className="form-group">
               <label className="form-label">请求间隔休眠 (秒)</label>
-              <input type="number" value={cfg.llm_wait_seconds} min={0} max={120}
+              <input type="number" value={cfg.llm_wait_seconds}
                 onChange={e => set('llm_wait_seconds', +e.target.value)} />
               <p className="form-hint">每消耗完一个请求后强行挂起的冷却时间，防止触发防刷限流 (429)。</p>
             </div>
@@ -210,9 +224,33 @@ export default function Settings() {
 
             <div className="form-group">
               <label className="form-label">API 凭证密钥 (api_key)</label>
-              <input type="password" value={currentProvider.api_key !== 'none' ? currentProvider.api_key : ''} placeholder="sk-... 或留空"
-                onChange={e => setProviderConfig('api_key', e.target.value || 'none')} />
-              <p className="form-hint">Ollama本地推理直接填写 ollama 即可，其他请填有效密钥。</p>
+              <input
+                type="password"
+                value={currentProvider.api_key || ''}
+                placeholder={currentProvider.has_api_key ? '已配置，留空则保持不变' : 'sk-... 或留空'}
+                onChange={e => {
+                  const value = e.target.value
+                  setCfg(c => ({
+                    ...c,
+                    providers: {
+                      ...c.providers,
+                      [c.llm_provider]: {
+                        ...c.providers[c.llm_provider],
+                        api_key: value,
+                        clear_api_key: false
+                      }
+                    }
+                  }))
+                }}
+              />
+              <p className="form-hint">
+                {currentProvider.has_api_key ? '当前已保存密钥，重新输入才会覆盖。' : '当前尚未配置密钥。'}
+              </p>
+              {currentProvider.has_api_key && cfg.llm_provider !== 'ollama' && (
+                <button type="button" className="btn btn-ghost" onClick={clearProviderApiKey}>
+                  清除已保存密钥
+                </button>
+              )}
             </div>
 
             <div className="form-group">
@@ -240,7 +278,7 @@ export default function Settings() {
 
             <div className="form-group">
               <label className="form-label">时间范围（天）</label>
-              <input type="number" value={cfg.arxiv_days} min={1} max={365}
+              <input type="number" value={cfg.arxiv_days} max={7}
                 disabled={cfg.auto_fetch_enabled}
                 title={cfg.auto_fetch_enabled ? "受自动化调度锁定" : ""}
                 onChange={e => set('arxiv_days', +e.target.value)} />
@@ -251,14 +289,14 @@ export default function Settings() {
 
             <div className="form-group">
               <label className="form-label">候选池大小</label>
-              <input type="number" value={cfg.arxiv_max_results} min={10} max={500}
+              <input type="number" value={cfg.arxiv_max_results} max={3000}
                 onChange={e => set('arxiv_max_results', +e.target.value)} />
               <p className="form-hint">抓取后进行筛选前的论文数量上限</p>
             </div>
 
             <div className="form-group">
               <label className="form-label">保留篇数</label>
-              <input type="number" value={cfg.papers_per_day} min={1} max={50}
+              <input type="number" value={cfg.papers_per_day} max={200}
                 onChange={e => set('papers_per_day', +e.target.value)} />
             </div>
 
@@ -332,12 +370,6 @@ export default function Settings() {
               </div>
             )}
 
-            <h3 style={{ marginTop: 24 }}>💾 存储</h3>
-            <div className="form-group">
-              <label className="form-label">Markdown 保存目录</label>
-              <input value={cfg.summaries_dir}
-                onChange={e => set('summaries_dir', e.target.value)} />
-            </div>
           </div>
         </div>
 

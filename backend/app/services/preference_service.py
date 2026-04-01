@@ -2,10 +2,10 @@
 用户偏好学习服务。
 
 算法（轻量 TF-IDF 余弦相似度）：
-  1. 收集评分 >= 4 的论文作为"正样本"
+  1. 收集评分大于一定阈值的论文作为"正样本"
   2. 对正样本标题+摘要做 TF-IDF 向量化
   3. 对待评分论文计算与正样本的平均余弦相似度作为偏好分
-  4. 若无历史评分，所有论文返回 0.0（均等）
+  4. 若无历史评分，所有论文返回 0.0 (均等)
 
 token 效率考量：
   - 纯本地计算，不调用任何 LLM API
@@ -23,13 +23,13 @@ if TYPE_CHECKING:
 def compute_preference_scores(
     candidates: list["RawPaper"],
     rated_papers: list["Paper"],
-    positive_threshold: int = 4,
+    positive_threshold: int = 1,
 ) -> dict[str, float]:
     """
     返回 {paper_id: preference_score}，分数越高越受用户偏好。
 
     Args:
-        candidates: 待排序的候选论文（来自 ArXiv）
+        candidates: 待排序的候选论文（来自 ArXiv)
         rated_papers: 数据库中有用户评分的论文
         positive_threshold: rating >= 此值视为正样本
     """
